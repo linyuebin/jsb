@@ -1,0 +1,7 @@
+{
+  "port": 5320,
+  "host": "0.0.0.0",
+  "dataDir": "./data",
+  "maxUploadMB": 10,
+  "siteName": "记事簿"
+}

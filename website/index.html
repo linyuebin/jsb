@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="记事簿——私有化部署的团队记事本。记录服务器账密、客户资料与私人备忘，图文混排、加密分享，数据只存在你自己的服务器上。">
+<title>记事簿 · 私有化部署的团队记事本</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+/* ============================================================
+   记事簿 推广官网 —— 单文件、零外部依赖，可部署到任意静态空间
+   联系方式请搜索「CONTACT-HERE」替换为自己的信息
+   ============================================================ */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --panel-2: #fafbfc;
+  --text: #1f2429;
+  --text-2: #57606a;
+  --text-3: #8b949e;
+  --border: #e4e7eb;
+  --border-2: #d8dce2;
+  --accent: #2f6fed;
+  --accent-2: #5b8cff;
+  --accent-weak: rgba(47,111,237,.08);
+  --danger: #d93026;
+  --ok: #1a9a6c;
+  --warn: #b58a1a;
+  --shadow: 0 10px 40px rgba(20,30,50,.10);
+  --shadow-sm: 0 2px 10px rgba(20,30,50,.07);
+  --radius: 14px;
+  --font: -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+/* 暗色变量 —— 两处保持一致：自动跟随系统（无 data-theme 时）/ 手动切换覆盖 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg:#131417; --panel:#1d1f23; --panel-2:#191b1f;
+    --text:#e6e8eb; --text-2:#aab2bc; --text-3:#7d8794;
+    --border:#2b2f36; --border-2:#383d45;
+    --accent:#5b8cff; --accent-2:#7ba4ff; --accent-weak:rgba(91,140,255,.12);
+    --shadow:0 10px 40px rgba(0,0,0,.5); --shadow-sm:0 2px 10px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#131417; --panel:#1d1f23; --panel-2:#191b1f;
+  --text:#e6e8eb; --text-2:#aab2bc; --text-3:#7d8794;
+  --border:#2b2f36; --border-2:#383d45;
+  --accent:#5b8cff; --accent-2:#7ba4ff; --accent-weak:rgba(91,140,255,.12);
+  --shadow:0 10px 40px rgba(0,0,0,.5); --shadow-sm:0 2px 10px rgba(0,0,0,.4);
+}
+/* 主题切换悬浮按钮 */
+.theme-fab {
+  position:fixed; right:18px; bottom:18px; z-index:90;
+  width:44px; height:44px; border-radius:50%;
+  border:1px solid var(--border-2); background:var(--panel); color:var(--text-2);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow-sm); transition:color .15s,border-color .15s;
+}
+.theme-fab:hover { color:var(--accent); border-color:var(--accent); }
+.theme-fab svg { width:20px; height:20px; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+a { color:inherit; text-decoration:none; }
+img,svg { vertical-align:middle; }
+.wrap { max-width:1080px; margin:0 auto; padding:0 22px; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding:11px 26px; border-radius:10px; font-size:15px; font-weight:600;
+  border:1px solid var(--border-2); background:var(--panel); cursor:pointer;
+  transition:background .15s,border-color .15s,transform .15s;
+}
+.btn:hover { background:var(--panel-2); border-color:var(--accent); color:var(--accent); }
+.btn-primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+.btn-primary:hover { background:var(--accent-2); border-color:var(--accent-2); color:#fff; }
+.btn-lg { padding:14px 32px; font-size:16px; }
+.btn-sm { padding:8px 18px; font-size:14px; }
+
+/* ---------- 顶部导航 ---------- */
+.topbar { position:sticky; top:0; z-index:50; background:color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+@supports not (background: color-mix(in srgb, red 50%, blue)) { .topbar { background:var(--bg); } }
+.topbar-in { display:flex; align-items:center; gap:26px; height:62px; }
+.logo { display:flex; align-items:center; gap:9px; font-size:18px; font-weight:800; }
+.logo svg { width:26px; height:26px; }
+.top-nav { display:flex; gap:24px; font-size:14.5px; color:var(--text-2); margin-left:auto; }
+.top-nav a:hover { color:var(--accent); }
+.menu-btn { display:none; margin-left:auto; width:38px; height:38px; border-radius:9px; border:1px solid var(--border); background:var(--panel); color:var(--text-2); font-size:18px; cursor:pointer; }
+
+/* ---------- Hero ---------- */
+.hero { padding:72px 0 40px; background:radial-gradient(900px 420px at 18% -10%, var(--accent-weak), transparent 65%), var(--bg); }
+.hero-in { display:flex; align-items:center; gap:48px; }
+.hero-copy { flex:1.05; min-width:0; }
+.pill {
+  display:inline-flex; align-items:center; gap:7px;
+  font-size:13px; font-weight:600; color:var(--accent);
+  background:var(--accent-weak); border:1px solid var(--accent);
+  border-radius:999px; padding:5px 14px; margin-bottom:22px;
+}
+.hero h1 { font-size:44px; line-height:1.25; letter-spacing:.5px; margin-bottom:18px; }
+.hero h1 em { font-style:normal; color:var(--accent); }
+.lead { font-size:17px; color:var(--text-2); max-width:34em; margin-bottom:30px; }
+.hero-cta { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:26px; }
+.hero-points { list-style:none; display:flex; flex-wrap:wrap; gap:8px 22px; font-size:13.5px; color:var(--text-3); }
+.hero-points b { color:var(--ok); font-weight:600; margin-right:5px; }
+
+/* ---------- Hero 产品模拟图 ---------- */
+.hero-mock { flex:1; min-width:0; }
+.mock {
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow:hidden; font-size:12px; line-height:1.5;
+}
+.mock-bar { display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--border); background:var(--panel-2); }
+.dot { width:10px; height:10px; border-radius:50%; background:var(--border-2); }
+.mock-body { display:flex; min-height:330px; }
+.mock-side { width:37%; flex:none; border-right:1px solid var(--border); padding:12px 10px; background:var(--panel); }
+.m-brand { display:flex; align-items:center; gap:6px; font-weight:700; font-size:12.5px; padding:2px 6px 10px; }
+.m-brand svg { width:15px; height:15px; }
+.m-search { height:24px; border-radius:7px; background:var(--panel-2); border:1px solid var(--border); margin:0 4px 10px; position:relative; }
+.m-search::after { content:"搜索笔记…"; position:absolute; left:8px; top:50%; transform:translateY(-50%); color:var(--text-3); font-size:10.5px; }
+.m-nav { display:flex; flex-direction:column; gap:2px; }
+.m-item { display:flex; gap:7px; align-items:center; padding:5px 8px; border-radius:7px; color:var(--text-2); }
+.m-item.on { background:var(--accent-weak); color:var(--accent); font-weight:600; }
+.m-ico { width:11px; height:11px; border-radius:3px; background:var(--border-2); flex:none; }
+.m-item.on .m-ico { background:var(--accent); }
+.m-sub { padding-left:14px; }
+.m-note { padding:7px 8px; border-radius:7px; }
+.m-note.on { background:var(--accent-weak); }
+.m-nt { font-weight:600; font-size:11.5px; }
+.m-ns { color:var(--text-3); font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mock-main { flex:1; padding:14px 16px; min-width:0; background:var(--panel-2); }
+.m-title { font-size:15px; font-weight:800; margin-bottom:8px; }
+.m-tools { display:flex; gap:5px; margin-bottom:14px; }
+.m-tools i { width:18px; height:18px; border-radius:5px; background:var(--panel); border:1px solid var(--border); }
+.m-h2 { width:52%; height:12px; border-radius:4px; background:var(--text-2); opacity:.85; margin:10px 0 9px; }
+.m-line { height:8px; border-radius:4px; background:var(--border-2); margin:7px 0; }
+.m-line.w80 { width:80%; } .m-line.w60 { width:60%; }
+.m-bold { display:inline-block; width:64px; height:8px; border-radius:4px; background:var(--accent); opacity:.75; }
+.m-img {
+  height:74px; border-radius:8px; margin:12px 0;
+  background:linear-gradient(135deg, var(--accent-weak), var(--accent) 55%, var(--accent-2));
+  position:relative;
+}
+.m-img::after { content:"IMG"; position:absolute; right:8px; bottom:6px; color:rgba(255,255,255,.85); font-size:10px; font-weight:700; letter-spacing:1px; }
+.m-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.m-list div { display:flex; gap:8px; align-items:center; color:var(--text-2); }
+.m-list i { width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; }
+.m-list span { height:7px; border-radius:4px; background:var(--border-2); display:inline-block; }
+.m-badge { display:inline-block; font-size:10px; font-weight:700; color:var(--accent); background:var(--accent-weak); border-radius:999px; padding:1px 9px; margin-left:8px; vertical-align:2px; }
+
+/* ---------- 区块通用 ---------- */
+.sec { padding:78px 0; }
+.sec.alt { background:var(--panel); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.sec-head { text-align:center; max-width:640px; margin:0 auto 46px; }
+.sec-kicker { display:block; font-size:13px; font-weight:700; letter-spacing:3px; color:var(--accent); margin-bottom:10px; }
+.sec h2 { font-size:30px; line-height:1.35; margin-bottom:12px; }
+.sec-head p { color:var(--text-2); font-size:15.5px; }
+
+.grid { display:grid; gap:18px; }
+.g2 { grid-template-columns:repeat(2,1fr); }
+.g3 { grid-template-columns:repeat(3,1fr); }
+.g4 { grid-template-columns:repeat(4,1fr); }
+.card {
+  background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:24px 22px; transition:transform .18s, box-shadow .18s, border-color .18s;
+}
+.sec:not(.alt) .card { background:var(--panel); }
+.card:hover { transform:translateY(-3px); box-shadow:var(--shadow-sm); border-color:var(--accent); }
+.card .ico {
+  width:42px; height:42px; border-radius:11px; margin-bottom:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--accent-weak); color:var(--accent);
+}
+.card .ico svg { width:22px; height:22px; }
+.card h3 { font-size:16.5px; margin-bottom:8px; }
+.card p { font-size:13.8px; color:var(--text-2); }
+
+/* ---------- 安全区 ---------- */
+.sec-dark { background:#101b33; color:#e8eefc; }
+@media (prefers-color-scheme: dark) { .sec-dark { background:#0e1526; } }
+.sec-dark .sec-kicker { color:var(--accent-2); }
+.sec-dark .sec-head p { color:#a9b8d8; }
+.sec-grid { display:grid; grid-template-columns:1fr 1.15fr; gap:40px; align-items:center; }
+.sec-grid h2 { font-size:28px; margin-bottom:14px; }
+.sec-grid > div > p { color:#a9b8d8; font-size:15px; margin-bottom:8px; }
+.safe-list { list-style:none; display:flex; flex-direction:column; gap:12px; }
+.safe-list li {
+  display:flex; gap:13px; align-items:flex-start;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10);
+  border-radius:12px; padding:15px 18px; font-size:14.5px;
+}
+.safe-list b { display:block; font-size:15px; margin-bottom:2px; }
+.safe-list span { color:#a9b8d8; font-size:13.5px; }
+.safe-list .ck { width:22px; height:22px; flex:none; border-radius:50%; margin-top:2px; background:rgba(64,169,255,.18); display:flex; align-items:center; justify-content:center; }
+.safe-list .ck svg { width:12px; height:12px; color:#6db2ff; }
+
+/* ---------- 部署步骤 ---------- */
+.steps { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; counter-reset:step; }
+.step { position:relative; background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius); padding:24px 22px 20px; }
+.sec:not(.alt) .step { background:var(--panel); }
+.step::before {
+  counter-increment:step; content:counter(step);
+  position:absolute; top:-15px; left:20px;
+  width:30px; height:30px; border-radius:9px;
+  background:var(--accent); color:#fff; font-weight:800; font-size:15px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow-sm);
+}
+.step h3 { font-size:15.5px; margin:8px 0 7px; }
+.step p { font-size:13.5px; color:var(--text-2); }
+.code {
+  margin-top:26px; background:#0e1526; color:#c9e3ff; border-radius:12px;
+  padding:18px 20px; font:13px/1.8 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  overflow-x:auto; white-space:pre;
+}
+.code .c { color:#5b7ba6; }
+
+/* ---------- 价格 ---------- */
+.price-card {
+  max-width:560px; margin:0 auto; text-align:center;
+  background:var(--panel); border:1px solid var(--border); border-radius:18px;
+  padding:44px 36px; box-shadow:var(--shadow); position:relative;
+}
+.price-tag { font-size:15px; color:var(--text-2); }
+.price-num { font-size:56px; font-weight:800; letter-spacing:-1px; margin:6px 0 2px; }
+.price-num small { font-size:18px; font-weight:600; color:var(--text-3); }
+.price-per { color:var(--text-3); font-size:13.5px; margin-bottom:26px; }
+.price-list { list-style:none; text-align:left; max-width:340px; margin:0 auto 30px; display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+.price-list li { display:flex; gap:10px; align-items:flex-start; }
+.price-list .ck { width:19px; height:19px; flex:none; margin-top:3px; border-radius:50%; background:var(--accent-weak); display:flex; align-items:center; justify-content:center; }
+.price-list .ck svg { width:11px; height:11px; color:var(--accent); }
+.price-note { font-size:12.5px; color:var(--text-3); margin-top:18px; }
+.price-ribbon {
+  position:absolute; top:18px; right:-12px; background:var(--accent); color:#fff;
+  font-size:12.5px; font-weight:700; padding:5px 16px; border-radius:999px; box-shadow:var(--shadow-sm);
+}
+
+/* ---------- FAQ ---------- */
+.faq { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
+.faq details { background:var(--panel-2); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.sec:not(.alt) .faq details { background:var(--panel); }
+.faq summary {
+  cursor:pointer; padding:16px 20px; font-weight:600; font-size:15px; list-style:none;
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+}
+.faq summary::-webkit-details-marker { display:none; }
+.faq summary::after { content:"+"; font-size:20px; color:var(--text-3); transition:transform .2s; flex:none; }
+.faq details[open] summary::after { transform:rotate(45deg); }
+.faq .a { padding:0 20px 17px; color:var(--text-2); font-size:14.5px; }
+
+/* ---------- 联系 CTA ---------- */
+.cta-sec { background:radial-gradient(700px 300px at 50% -20%, var(--accent-weak), transparent 70%), var(--bg); }
+.cta-box {
+  text-align:center; background:var(--panel); border:1px solid var(--border);
+  border-radius:18px; padding:50px 30px; box-shadow:var(--shadow);
+}
+.cta-box h2 { font-size:28px; margin-bottom:10px; }
+.cta-box > p { color:var(--text-2); margin-bottom:28px; }
+.contact-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+.contact-item {
+  display:flex; align-items:center; gap:10px;
+  border:1px solid var(--border-2); border-radius:12px; padding:13px 22px;
+  font-size:14.5px; background:var(--panel-2);
+}
+.contact-item svg { width:18px; height:18px; color:var(--accent); }
+.contact-item b { font-weight:700; }
+
+/* ---------- 页脚 ---------- */
+footer { border-top:1px solid var(--border); padding:26px 0 34px; color:var(--text-3); font-size:13px; text-align:center; }
+footer b { color:var(--text-2); }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 920px) {
+  .hero-in { flex-direction:column; gap:36px; }
+  .hero-copy { text-align:center; }
+  .hero-cta { justify-content:center; }
+  .hero-points { justify-content:center; }
+  .hero h1 { font-size:34px; }
+  .sec-grid { grid-template-columns:1fr; }
+  .g4 { grid-template-columns:repeat(2,1fr); }
+  .g3 { grid-template-columns:repeat(2,1fr); }
+  .steps { grid-template-columns:1fr; }
+}
+@media (max-width: 640px) {
+  .top-nav { display:none; position:absolute; top:62px; left:0; right:0; background:var(--panel); border-bottom:1px solid var(--border); flex-direction:column; gap:0; padding:8px 18px 14px; }
+  .top-nav.open { display:flex; }
+  .top-nav a { padding:11px 2px; border-bottom:1px solid var(--border); }
+  .menu-btn { display:inline-flex; align-items:center; justify-content:center; }
+  .topbar .btn { display:none; }
+  .hero { padding:44px 0 30px; }
+  .hero h1 { font-size:29px; }
+  .g4, .g3, .g2 { grid-template-columns:1fr; }
+  .sec { padding:54px 0; }
+  .sec h2 { font-size:24px; }
+  .price-num { font-size:46px; }
+  .mock-side { width:42%; }
+}
+</style>
+</head>
+<body id="top">
+
+<!-- ================= 顶部导航 ================= -->
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="logo" href="#top">
+      <svg viewBox="0 0 64 64" fill="none"><rect x="10" y="6" width="44" height="52" rx="10" stroke="#2f6fed" stroke-width="5"/><line x1="22" y1="7" x2="22" y2="16" stroke="#2f6fed" stroke-width="5"/><line x1="42" y1="7" x2="42" y2="16" stroke="#2f6fed" stroke-width="5"/><line x1="20" y1="30" x2="44" y2="30" stroke="#2f6fed" stroke-width="5" stroke-linecap="round"/><line x1="20" y1="42" x2="34" y2="42" stroke="#2f6fed" stroke-width="5" stroke-linecap="round"/></svg>
+      记事簿
+    </a>
+    <nav class="top-nav" id="top-nav">
+      <a href="#why">为什么</a>
+      <a href="#features">功能</a>
+      <a href="#security">安全</a>
+      <a href="#deploy">部署</a>
+      <a href="#price">价格</a>
+      <a href="#faq">常见问题</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="#contact">咨询部署</a>
+    <button class="menu-btn" id="menu-btn" aria-label="菜单">☰</button>
+  </div>
+</header>
+
+<!-- ================= Hero ================= -->
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <span class="pill">🔒 只做私有化部署 · 无公有云版本</span>
+      <h1>把团队的记事本，<br>放回<em>自己的服务器</em></h1>
+      <p class="lead">服务器账密、客户资料、私人备忘——图文混排、全文搜索、可加密分享给任何人。数据从头到尾只存在你自己的服务器上，不上云、不订阅、不被扫描。</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="#contact">咨询部署 · ¥1000/次</a>
+        <a class="btn btn-lg" href="#features">了解功能</a>
+      </div>
+      <ul class="hero-points">
+        <li><b>✓</b>零依赖，拷贝即用</li>
+        <li><b>✓</b>内网可用，无需联网</li>
+        <li><b>✓</b>5 分钟上线</li>
+        <li><b>✓</b>一次付费，无订阅费</li>
+      </ul>
+    </div>
+
+    <div class="hero-mock">
+      <div class="mock">
+        <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="mock-body">
+          <div class="mock-side">
+            <div class="m-brand"><svg viewBox="0 0 64 64" fill="none"><rect x="10" y="6" width="44" height="52" rx="10" stroke="#2f6fed" stroke-width="6"/><line x1="22" y1="7" x2="22" y2="16" stroke="#2f6fed" stroke-width="6"/><line x1="20" y1="30" x2="44" y2="30" stroke="#2f6fed" stroke-width="6"/></svg>记事簿</div>
+            <div class="m-search"></div>
+            <div class="m-nav">
+              <div class="m-item"><i class="m-ico"></i>全部笔记 <span style="margin-left:auto;color:var(--text-3)">12</span></div>
+              <div class="m-item"><i class="m-ico"></i>未分组 <span style="margin-left:auto;color:var(--text-3)">3</span></div>
+              <div class="m-item m-sub"><i class="m-ico"></i>我的分组</div>
+              <div class="m-item on m-sub" style="padding-left:26px"><i class="m-ico"></i>账号密码</div>
+              <div class="m-item m-sub" style="padding-left:26px"><i class="m-ico"></i>工作台账</div>
+              <div class="m-item" style="margin-top:4px"><i class="m-ico"></i>回收站</div>
+            </div>
+            <div style="height:10px"></div>
+            <div class="m-note on"><div class="m-nt">生产服务器</div><div class="m-ns">root / ******</div></div>
+            <div class="m-note"><div class="m-nt">客户对接清单</div><div class="m-ns">张总 · 报价待确认…</div></div>
+          </div>
+          <div class="mock-main">
+            <div class="m-title">生产服务器<span class="m-badge">密码分享中</span></div>
+            <div class="m-tools"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="m-h2"></div>
+            <div class="m-line w80"></div>
+            <div class="m-line">root 密码：<span class="m-bold"></span>（每 90 天轮换）</div>
+            <div class="m-img"></div>
+            <div class="m-line w60"></div>
+            <div class="m-list">
+              <div><i></i><span style="width:46%"></span></div>
+              <div><i></i><span style="width:34%"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 为什么 ================= -->
+<section class="sec" id="why">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-kicker">WHY</span>
+      <h2>敏感内容，不该存在别人的云上</h2>
+      <p>公有云笔记无法证明「没人看」；本地 txt 又难同步、难检索、难分享。私有化的记事簿，两全。</p>
+    </div>
+    <div class="grid g4">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>账密无处安放</h3>
+        <p>服务器密码、后台账号散落在聊天记录和便签里，换个设备就找不到，还人人可见。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M4 16l4-6 4 5 3-3 5 4"/><circle cx="9" cy="8" r="1.6"/></svg></div>
+        <h3>云笔记不可控</h3>
+        <p>内容存在厂商服务器，条款一改就能扫描、分析甚至关停，企业资料谈不上保密。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <h3>内网用不了 SaaS</h3>
+        <p>涉密环境、纯内网办公，所有在线笔记产品集体失效，只能退回 Excel 和纸质本。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg></div>
+        <h3>分享难以管控</h3>
+        <p>想把资料给外部同事看，发全文不安全、截图不体面。需要「链接 + 密码」的受控分享。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 功能 ================= -->
+<section class="sec alt" id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-kicker">FEATURES</span>
+      <h2>一台自己的「云」笔记</h2>
+      <p>浏览器打开即用，手机、平板、电脑全端响应式，亮暗双主题自动切换。</p>
+    </div>
+    <div class="grid g3">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+        <h3>图文混排编辑</h3>
+        <p>标题、列表、引用、代码块、链接一应俱全；截图直接粘贴、图片拖拽即传。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <h3>全文搜索</h3>
+        <p>标题与正文全文检索，几百篇笔记里找一条密码，一秒定位。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+        <h3>自定义分组</h3>
+        <p>账号密码、工作台账、灵感备忘……分组管理、随时移动，重要的还能置顶。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg></div>
+        <h3>受控分享</h3>
+        <p>每篇笔记可生成链接：互联网公开，或加访问密码；重新生成即旧链接失效。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <h3>多成员账号</h3>
+        <p>管理员开号管人，成员笔记互相不可见——连管理员也看不到成员内容。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        <h3>回收站兜底</h3>
+        <p>误删可还原、可彻底清除；编辑自动保存，断电断网不丢字。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 安全 ================= -->
+<section class="sec sec-dark" id="security">
+  <div class="wrap">
+    <div class="sec-grid">
+      <div>
+        <span class="sec-kicker">SECURITY</span>
+        <h2>为「记录密码」<br>而做的安全设计</h2>
+        <p>记事簿里存的往往是最敏感的东西，安全不是附加题，而是前提。</p>
+        <p>配合 HTTPS 反代部署，满足企业内审要求。</p>
+      </div>
+      <ul class="safe-list">
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div><b>口令 scrypt 加盐哈希</b><span>密码不明文落盘，校验使用常数时间比较，防时序侧信道。</span></div></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div><b>内容白名单净化</b><span>富文本保存前服务端过滤脚本与危险属性，分享页无 XSS 注入面。</span></div></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div><b>分享图片防盗链</b><span>密码分享的图片同样需要解锁凭据，30 分钟滑动过期，链接可随时吊销。</span></div></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div><b>爆破限流 + CSP</b><span>登录与分享密码连续失败自动锁定；全站严格 CSP，无第三方脚本。</span></div></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div><b>数据文件自持</b><span>纯 JSON + 图片文件存储，备份即拷目录，可随时审计、随时迁走。</span></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 部署 ================= -->
+<section class="sec alt" id="deploy">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-kicker">DEPLOY</span>
+      <h2>5 分钟，跑在你自己的服务器上</h2>
+      <p>零 npm 依赖、零数据库、无需访问外网——物理隔离的内网环境同样适用。</p>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>上传程序</h3><p>把整个程序目录拷贝到服务器（约 100KB），不需要安装任何依赖包。</p></div>
+      <div class="step"><h3>启动服务</h3><p>一条命令启动，支持 systemd 常驻与 Docker 容器两种方式，交付时全部配好。</p></div>
+      <div class="step"><h3>初始化使用</h3><p>浏览器打开地址，创建管理员账号，即可开始给团队成员开号记事。</p></div>
+    </div>
+    <div class="code"><span class="c"># 部署完成后，一条命令即可启动（交付时已配置为开机自启）</span>
+$ node server.js
+======================================
+  记事簿 已启动
+  访问地址: http://your-server:5320/
+  数据目录: /opt/jsb/data
+======================================</div>
+  </div>
+</section>
+
+<!-- ================= 价格 ================= -->
+<section class="sec" id="price">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-kicker">PRICING</span>
+      <h2>一次部署，一直使用</h2>
+      <p>不按人头收费、没有月费年费，数据与程序都交付给你。</p>
+    </div>
+    <div class="price-card">
+      <span class="price-ribbon">无订阅 · 无按人计费</span>
+      <div class="price-tag">私有化部署服务</div>
+      <div class="price-num">¥1,000<small>/次</small></div>
+      <div class="price-per">单服务器 / 单次部署</div>
+      <ul class="price-list">
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>部署到您的服务器（物理机 / 云主机 / 内网均支持）</li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>HTTPS 证书配置与域名绑定</li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>开机自启、数据备份方案配置</li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>管理员使用培训与操作手册</li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>交付后一年内的缺陷修复与版本更新</li>
+      </ul>
+      <a class="btn btn-primary btn-lg" href="#contact">预约部署</a>
+      <div class="price-note">程序与数据完整交付、无后门、无授权联网校验，随时可自行运维。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="sec alt" id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-kicker">FAQ</span>
+      <h2>常见问题</h2>
+    </div>
+    <div class="faq">
+      <details open>
+        <summary>数据存在哪里？你们能看到吗？</summary>
+        <div class="a">全部数据（账号、笔记、图片）都以文件形式存在你指定服务器的数据目录里。我们不掌握你的服务器地址与权限，交付完成后无法远程访问任何内容。</div>
+      </details>
+      <details>
+        <summary>服务器不联网，可以用吗？</summary>
+        <div class="a">可以。程序零外部依赖、前端无任何 CDN 引用，纯内网环境安装与使用都不需要访问互联网。</div>
+      </details>
+      <details>
+        <summary>多少人用合适？支持手机吗？</summary>
+        <div class="a">面向团队与部门级使用，几十名成员、上万篇笔记毫无压力。手机、平板浏览器直接访问，界面自动适配。</div>
+      </details>
+      <details>
+        <summary>分享出去的内容安全吗？</summary>
+        <div class="a">分享支持「互联网公开」和「密码保护」两种模式；密码保护下连图片都需要解锁凭据才能加载。随时可关闭分享或重新生成链接，旧链接立即失效。</div>
+      </details>
+      <details>
+        <summary>后续想换服务器或停用怎么办？</summary>
+        <div class="a">数据就是普通文件目录，停服拷走即完成迁移；不玩了，删掉目录即彻底清除，无任何残留。</div>
+      </details>
+      <details>
+        <summary>以后加功能还要再付费吗？</summary>
+        <div class="a">部署费已包含一年内的缺陷修复与版本更新；新增大功能（如端到端加密、历史版本）按需单独评估，旧版本持续可用、不强制升级。</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 联系 CTA ================= -->
+<section class="sec cta-sec" id="contact">
+  <div class="wrap">
+    <div class="cta-box">
+      <h2>今天就把记事本搬回自己家</h2>
+      <p>提供服务器信息，当天完成部署交付。</p>
+      <!-- CONTACT-HERE：把下面的联系方式替换为你自己的 -->
+      <div class="contact-row">
+        <div class="contact-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span>微信：<b>your-wechat</b></span>
+        </div>
+        <div class="contact-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>邮箱：<b>hello@example.com</b></span>
+        </div>
+        <div class="contact-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>电话：<b>138-0000-0000</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>记事簿</b> · 私有化部署的团队记事本 — 数据自持 · 内网可用 · 一次付费</p>
+  </div>
+</footer>
+
+<button class="theme-fab theme-btn" type="button" title="切换主题" aria-label="切换主题"></button>
+
+<script>
+// 移动端菜单开关
+document.getElementById('menu-btn').addEventListener('click', function () {
+  document.getElementById('top-nav').classList.toggle('open');
+});
+
+// 主题切换：未手动切换时跟随系统，切换后记忆偏好
+(function () {
+  var KEY = 'jsb_theme';
+  var SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+  var MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  function stored() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function dark() { return stored() === 'dark' || (!stored() && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
+  function paint() {
+    var t = stored();
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    var fab = document.querySelector('.theme-fab');
+    if (fab) { fab.innerHTML = dark() ? SUN : MOON; fab.title = dark() ? '切换为亮色主题' : '切换为暗色主题'; }
+  }
+  document.querySelector('.theme-fab').addEventListener('click', function () {
+    try { localStorage.setItem(KEY, dark() ? 'light' : 'dark'); } catch (e) {}
+    paint();
+  });
+  paint();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[Unit]
+Description=JSB Notes (记事簿 · 私有化团队记事本)
+After=network.target
+
+[Service]
+Type=simple
+# 按实际部署用户调整（建议专用低权限账号）
+User=root
+WorkingDirectory=/opt/jsb
+ExecStart=/usr/bin/node server.js
+Environment=PORT=5320
+Environment=HOST=0.0.0.0
+Environment=DATA_DIR=/opt/jsb/data
+Restart=always
+RestartSec=3
+# 基础加固
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

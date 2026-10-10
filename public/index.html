@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <title>记事簿</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+
+  <!-- ===== 首次初始化 ===== -->
+  <div id="view-setup" class="auth-wrap hidden">
+    <form class="auth-card" id="setup-form" autocomplete="off">
+      <div class="auth-logo">
+        <svg viewBox="0 0 64 64"><rect x="10" y="6" width="44" height="52" rx="8" fill="currentColor" opacity="0"/><rect x="10" y="6" width="44" height="52" rx="8" fill="none" stroke="currentColor" stroke-width="4"/><line x1="22" y1="6" x2="22" y2="16" stroke="currentColor" stroke-width="4"/><line x1="42" y1="6" x2="42" y2="16" stroke="currentColor" stroke-width="4"/><line x1="20" y1="30" x2="44" y2="30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><line x1="20" y1="40" x2="44" y2="40" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+      </div>
+      <h1>初始化记事簿</h1>
+      <p class="auth-sub">首次使用，请创建管理员账号</p>
+      <label>用户名<input name="username" required maxlength="30" placeholder="字母 / 数字 / 中文"></label>
+      <label>姓名（选填）<input name="name" maxlength="30" placeholder="显示用姓名"></label>
+      <label>密码<input type="password" name="password" required minlength="6" placeholder="至少 6 位"></label>
+      <label>确认密码<input type="password" name="password2" required minlength="6"></label>
+      <div class="form-error" id="setup-error"></div>
+      <button class="btn btn-primary btn-block" type="submit">创建并进入</button>
+    </form>
+  </div>
+
+  <!-- ===== 登录 ===== -->
+  <div id="view-login" class="auth-wrap hidden">
+    <form class="auth-card" id="login-form">
+      <div class="auth-logo">
+        <svg viewBox="0 0 64 64"><rect x="10" y="6" width="44" height="52" rx="8" fill="none" stroke="currentColor" stroke-width="4"/><line x1="22" y1="6" x2="22" y2="16" stroke="currentColor" stroke-width="4"/><line x1="42" y1="6" x2="42" y2="16" stroke="currentColor" stroke-width="4"/><line x1="20" y1="30" x2="44" y2="30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><line x1="20" y1="40" x2="36" y2="40" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+      </div>
+      <h1>记事簿</h1>
+      <p class="auth-sub">私有化部署 · 数据自持</p>
+      <label>用户名<input name="username" required autocomplete="username"></label>
+      <label>密码<input type="password" name="password" required autocomplete="current-password"></label>
+      <div class="form-error" id="login-error"></div>
+      <button class="btn btn-primary btn-block" type="submit">登 录</button>
+      <div class="auth-foot">所有数据仅保存在您自己的服务器上</div>
+    </form>
+  </div>
+
+  <!-- ===== 主应用 ===== -->
+  <div id="view-app" class="app hidden">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head">
+        <div class="brand-row">
+          <div class="brand">
+            <svg viewBox="0 0 64 64"><rect x="10" y="6" width="44" height="52" rx="8" fill="none" stroke="currentColor" stroke-width="5"/><line x1="22" y1="6" x2="22" y2="16" stroke="currentColor" stroke-width="5"/><line x1="42" y1="6" x2="42" y2="16" stroke="currentColor" stroke-width="5"/><line x1="20" y1="30" x2="44" y2="30" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><line x1="20" y1="42" x2="36" y2="42" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>
+            <span id="brand-name">记事簿</span>
+          </div>
+          <button class="icon-btn theme-btn" id="theme-btn" type="button" title="切换主题"></button>
+        </div>
+        <div class="user-box">
+          <button class="user-btn" id="user-btn" type="button">
+            <span class="avatar" id="avatar"></span>
+            <span class="u-name" id="user-name"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="dropdown hidden" id="user-menu">
+            <button type="button" data-act="settings">修改密码</button>
+            <button type="button" data-act="admin" id="menu-admin" class="hidden">用户管理</button>
+            <div class="dd-sep"></div>
+            <button type="button" data-act="logout" class="danger">退出登录</button>
+          </div>
+        </div>
+      </div>
+      <div class="side-search">
+        <input id="search" type="search" placeholder="搜索笔记…" autocomplete="off">
+      </div>
+      <nav class="side-nav" id="side-nav">
+        <button class="nav-item active" type="button" data-nav="all">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          全部笔记<span class="nav-count" id="count-all"></span>
+        </button>
+        <button class="nav-item" type="button" data-nav="none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+          未分组<span class="nav-count" id="count-none"></span>
+        </button>
+        <div class="group-block" id="group-block">
+          <div class="group-head">
+            <button class="group-toggle" id="group-toggle" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <span>我的分组</span>
+            </button>
+            <button class="icon-btn group-add" id="group-add" type="button" title="新建分组">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+          <div class="group-list" id="group-list"></div>
+        </div>
+        <button class="nav-item" type="button" data-nav="trash">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          回收站
+        </button>
+      </nav>
+      <div class="note-list" id="note-list"></div>
+      <button class="new-note-btn" id="new-note" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新建笔记
+      </button>
+    </aside>
+
+    <main class="main" id="main">
+      <!-- 空态 -->
+      <div class="empty" id="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/><path d="M12 8v5l3 3"/></svg>
+        <p>选择一篇笔记，或开始新建</p>
+      </div>
+
+      <!-- 编辑区 -->
+      <div class="editor-pane hidden" id="editor-pane">
+        <header class="ed-head">
+          <button class="icon-btn back-btn" id="back-btn" type="button" title="返回列表">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <input class="ed-title" id="ed-title" placeholder="无标题笔记" maxlength="200">
+          <span class="ed-meta" id="save-status"></span>
+          <div class="ed-actions">
+            <button class="icon-btn" id="pin-btn" type="button" title="置顶">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a3 3 0 0 0-3-3 3 3 0 0 0-3 3z"/></svg>
+            </button>
+            <button class="btn btn-sm" id="share-btn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+              分享
+            </button>
+            <div class="menu-wrap">
+              <button class="icon-btn" id="more-btn" type="button" title="更多">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+              </button>
+              <div class="dropdown hidden" id="more-menu">
+                <button type="button" data-act="move">移动到分组…</button>
+                <div class="dd-sep"></div>
+                <button type="button" data-act="delete" class="danger">移到回收站</button>
+                <button type="button" data-act="purge" class="danger">彻底删除</button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div class="ed-workspace" id="ed-workspace" style="display:flex;flex-direction:column;flex:1;min-height:0;"></div>
+        <footer class="ed-foot">
+          <span id="word-count"></span>
+          <span id="share-badge"></span>
+        </footer>
+      </div>
+
+      <!-- 用户管理 -->
+      <div class="admin-pane hidden" id="admin-pane">
+        <header class="admin-head">
+          <button class="icon-btn" id="admin-back" type="button" title="返回">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h2>用户管理</h2>
+          <button class="btn btn-primary btn-sm" id="add-user-btn" type="button">+ 添加成员</button>
+        </header>
+        <div class="admin-tip">管理员仅负责账号的创建与维护，无法查看成员的笔记内容。</div>
+        <div class="admin-scroll"><table class="admin-table" id="admin-table"></table></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===== 通用弹窗 ===== -->
+  <div class="modal-mask hidden" id="modal-mask">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modal-title"></h3>
+        <button class="icon-btn" id="modal-close" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- 登录 / 初始化页的主题切换浮动按钮（进入应用后隐藏） -->
+  <button class="icon-btn theme-btn theme-float" id="theme-btn-auth" type="button" title="切换主题"></button>
+
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script src="editor.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
