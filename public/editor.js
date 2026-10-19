@@ -39,13 +39,18 @@
     mount.innerHTML = '';
     this.toolbar = document.createElement('div');
     this.toolbar.className = 'ed-toolbar';
+    // 内容滚动容器（对应样式 .ed-scroll：flex:1 + overflow-y:auto），
+    // 工具栏/底部栏固定，仅正文区域滚动
+    this.scroller = document.createElement('div');
+    this.scroller.className = 'ed-scroll';
     this.area = document.createElement('div');
     this.area.className = 'ed-area rich';
     this.area.contentEditable = 'true';
     this.area.setAttribute('data-placeholder', opts.placeholder || '开始记录… 支持文字、图片混排');
     this.area.setAttribute('spellcheck', 'false');
+    this.scroller.appendChild(this.area);
     mount.appendChild(this.toolbar);
-    mount.appendChild(this.area);
+    mount.appendChild(this.scroller);
 
     this._buildToolbar();
     this._bind();
